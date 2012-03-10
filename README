@@ -1,4 +1,4 @@
-Copyright (c) 2009,2010 Dennis Kaarsemaker <dennis@kaarsemaker.net>
+Copyright (c) 2009-2012 Dennis Kaarsemaker <dennis@kaarsemaker.net>
 A command-line interface to query the Django ORM
 
 Install:
@@ -17,10 +17,12 @@ The __in filter works, use a comma separated string of arguments
 
 Examples:
  - Display name and assettag of all mc01 servers
-   %prog query -a servers -m Server name__startswith=mc01 -f name,assettag
+   ./manage.py query -a servers -m Server name__startswith=mc01 -f name,assettag
  - Get a list of name, ip, mac for all servers where the does not contain .82.
-   %prog query -a servers -m Interface !ip_address__contains='.82.' -f server.name,ip_address,mac_address
+   ./manage.py query -a servers -m Interface !ip_address__contains='.82.' -f server.name,ip_address,mac_address
  - Use a template to get the roles, depending on mac address
-   %prog query -a servers -m Server interface__mac_address=00:17:A4:8D:E6:BC -t '{{ objects.0.role_set.all|join:"," }}'
+   ./manage.py query -a servers -m Server interface__mac_address=00:17:A4:8D:E6:BC -t '{{ objects.0.role_set.all|join:"," }}'
  - List all eth0/eth1 network interfaces
-   %prog query -a servers -m Interface name__in=eth0,eth1 -f ip_address,mac_address
+   ./manage.py query -a servers -m Interface name__in=eth0,eth1 -f ip_address,mac_address
+ - Update the status of many servers at once
+   ./manage.py query -a servers -m Server name__contains=builder- -u status=spare

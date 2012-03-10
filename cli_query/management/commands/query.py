@@ -1,4 +1,4 @@
-# Copyright (c) 2009,2010 Dennis Kaarsemaker <dennis@kaarsemaker.net>
+# Copyright (c) 2009-2012 Dennis Kaarsemaker <dennis@kaarsemaker.net>
 # A command-line interface to query the Django ORM
 # 
 # Redistribution and use in source and binary forms, with or without modification,
@@ -50,7 +50,12 @@ Examples:
  - Use a template to get the roles, depending on mac address
    %prog query -a servers -m Server interface__mac_address=00:17:A4:8D:E6:BC -t '{{ objects.0.role_set.all|join:"," }}'
  - List all eth0/eth1 network interfaces
-   %prog query -a servers -m Interface name__in=eth0,eth1 -f ip_address,mac_address"""
+   %prog query -a servers -m Interface name__in=eth0,eth1 -f ip_address,mac_address
+
+/!\\ Warning /!\\
+This script does not do much error checking. If you spell your query wrong, or
+do something wrong with templates, you will get a python traceback and not a
+nice error message."""
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -67,7 +72,9 @@ class Command(BaseCommand):
         make_option('-t', '--template', dest="template", default='',
                     help="Template in django syntax"),
         make_option('-T', '--template-file', dest="template_file", default=None,
-                    help="File containing the template (abs/rel path or loader path)")
+                    help="File containing the template (abs/rel path or loader path)"),
+        make_option('-u', '--update', dest="updates", default=[], action="append",
+                    help="Updates to apply"),
     )
     help = usage
     args = 'filter [filter ...]'
@@ -79,8 +86,8 @@ class Command(BaseCommand):
         if not options['model']:
             print "You must specify which model to use"
             sys.exit(1)
-        if not options['fields'] and not options['template'] and not options['template_file']:
-            print "You must specify a list of fields or a template"
+        if not options['fields'] and not options['template'] and not options['template_file'] and not options['updates']:
+            print "You must specify a list of fields, a template or a set of updates"
             sys.exit(1)
 
         # Import the model
@@ -104,6 +111,28 @@ class Command(BaseCommand):
         if options['order']:
             queryset = queryset.order_by(options['order'])
 
+        # Update
+        if options['updates']:
+            updates = dict([x.split('=', 1) for x in options['updates']])
+            for key in updates:
+                choices = [x[0] for x in model._meta.get_field_by_name(key)[0].choices]
+                if choices and updates[key] not in choices:
+                    raise ValueError("Invalid choice for %s: %s. Valid choices: %s" % (key, updates[key], ', '.join(choices)))
+            keylen = max([len(x) for x in updates]) + 3
+            vallen = max([len(getattr(obj, key)) for obj in queryset for key in updates]) + 3
+            for obj in queryset:
+                print str(obj)
+                for key in sorted(updates.keys()):
+                    sys.stdout.write('  ' +  key + ' ' * (keylen - len(key)))
+                    sys.stdout.write(getattr(obj, key) + ' ' * (vallen - len(getattr(obj,key))))
+                    sys.stdout.write('=> ' + updates[key] + "\n")
+            resp = raw_input("Apply changes? [y/N] ")
+            if resp.lower() != 'y':
+                print "Aborted"
+            else:
+                queryset.update(**updates)
+                print "Applied!"
+
         # Generate output
         if options['template'] or options['template_file']:
             template = Template(options['template'])
@@ -115,7 +144,7 @@ class Command(BaseCommand):
             elif tf:
                 template = loader.get_template(tf)
             print template.render(Context({'objects': queryset}))
-        else:
+        elif options['fields']:
             def getattr_r(obj, attr):
                 if '.' in attr:
                     me, next = attr.split('.',1)
