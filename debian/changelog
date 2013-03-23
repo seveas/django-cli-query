@@ -1,3 +1,9 @@
+django-cli-query (1.2-2) quantal; urgency=low
+
+  * Missing build dependency on setuptools
+
+ -- Dennis Kaarsemaker <dennis@kaarsemaker.net>  Sat, 23 Mar 2013 13:38:23 +0100
+
 django-cli-query (1.2-1) quantal; urgency=low
 
   * Initial release.
