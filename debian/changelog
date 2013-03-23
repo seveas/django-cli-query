@@ -1,0 +1,5 @@
+django-cli-query (1.2-1) quantal; urgency=low
+
+  * Initial release.
+
+ -- Dennis Kaarsemaker <dennis@kaarsemaker.net>  Sat, 23 Mar 2013 11:54:01 +0100
