@@ -1,20 +1,20 @@
 # Copyright (c) 2009-2012 Dennis Kaarsemaker <dennis@kaarsemaker.net>
 # A command-line interface to query the Django ORM
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
-#     1. Redistributions of source code must retain the above copyright notice, 
+#
+#     1. Redistributions of source code must retain the above copyright notice,
 #        this list of conditions and the following disclaimer.
-#     
-#     2. Redistributions in binary form must reproduce the above copyright 
+#
+#     2. Redistributions in binary form must reproduce the above copyright
 #        notice, this list of conditions and the following disclaimer in the
 #        documentation and/or other materials provided with the distribution.
-# 
+#
 #     3. Neither the name of Django nor the names of its contributors may be used
 #        to endorse or promote products derived from this software without
 #        specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,12 +35,15 @@ import os.path
 import sys
 
 usage="""The django ORM will be queried with the filters on the commandline. Records
-will be separated with newlines, fields with the specified separator 
-(the default is a comma). Alternatively, a template can be specified which 
+will be separated with newlines, fields with the specified separator
+(the default is a comma). Alternatively, a template can be specified which
 will be passed the result of the query as the 'objects' variable
 
 Query key/value pairs can be prefixed with a '!' or '~' to negate the query.
 The __in filter works, use a comma separated string of arguments
+
+You can also update fields using -u field=value. For every changed object, you
+will be prompted to approve the changes.
 
 Examples:
  - Display name and assettag of all mc01 servers
@@ -51,6 +54,11 @@ Examples:
    %prog query -a servers -m Server interface__mac_address=00:17:A4:8D:E6:BC -t '{{ objects.0.role_set.all|join:"," }}'
  - List all eth0/eth1 network interfaces
    %prog query -a servers -m Interface name__in=eth0,eth1 -f ip_address,mac_address
+ - Update the state of all mc2* servers
+   $prog query -a servers -m Server name__startswith=mc2 -u status=live
+
+Operators you can filter with are listed on see
+https://docs.djangoproject.com/en/dev/ref/models/querysets/#field-lookups
 
 /!\\ Warning /!\\
 This script does not do much error checking. If you spell your query wrong, or
@@ -98,15 +106,7 @@ class Command(BaseCommand):
         model = getattr(models, options['model'])
 
         # Create queryset from commandline arguments
-        qargs = []
-        for x in args:
-            key, val = x.split('=',1)
-            if key.endswith('__in'):
-                val = val.split(',')
-            if key.startswith('!') or key.startswith('~'):
-                qargs.append(~Q(**{key[1:]: val}))
-            else:
-                qargs.append(Q(**{key: val}))
+        qargs = make_filter(args)
         queryset = model.objects.filter(*qargs).distinct()
         if options['order']:
             queryset = queryset.order_by(options['order'])
@@ -119,12 +119,12 @@ class Command(BaseCommand):
                 if choices and updates[key] not in choices:
                     raise ValueError("Invalid choice for %s: %s. Valid choices: %s" % (key, updates[key], ', '.join(choices)))
             keylen = max([len(x) for x in updates]) + 3
-            vallen = max([len(getattr(obj, key)) for obj in queryset for key in updates]) + 3
+            vallen = max([len(str(getattr(obj, key))) for obj in queryset for key in updates]) + 3
             for obj in queryset:
                 print str(obj)
                 for key in sorted(updates.keys()):
                     sys.stdout.write('  ' +  key + ' ' * (keylen - len(key)))
-                    sys.stdout.write(getattr(obj, key) + ' ' * (vallen - len(getattr(obj,key))))
+                    sys.stdout.write(str(getattr(obj, key)) + ' ' * (vallen - len(str(getattr(obj,key)))))
                     sys.stdout.write('=> ' + updates[key] + "\n")
             resp = raw_input("Apply changes? [y/N] ")
             if resp.lower() != 'y':
@@ -153,3 +153,17 @@ class Command(BaseCommand):
             fields = options['fields'].split(',')
             for record in queryset:
                 print options['separator'].join([unicode(getattr_r(record, x)) for x in fields])
+
+def make_filter(args):
+    qargs = []
+    for x in args:
+        if not x:
+            continue
+        key, val = x.split('=',1)
+        if key.endswith('__in'):
+            val = val.split(',')
+        if key.startswith('!') or key.startswith('~'):
+            qargs.append(~Q(**{key[1:]: val}))
+        else:
+            qargs.append(Q(**{key: val}))
+    return qargs

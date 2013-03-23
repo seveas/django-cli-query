@@ -2,7 +2,7 @@ import os
 from setuptools import setup, find_packages
  
 setup(name='django-cli-query',
-    version="1.1",
+    version="1.2",
     description='Management command for commandline querying',
     author='Dennis Kaarsemaker',
     author_email='dennis@kaarsemaker.net',

@@ -8,21 +8,27 @@ Install:
 Usage: cd your_project_dir; ./manage.py query [options] [filters]
 
 The django ORM will be queried with the filters on the commandline. Records
-will be separated with newlines, fields with the specified separator 
-(the default is a comma). Alternatively, a template can be specified which 
+will be separated with newlines, fields with the specified separator
+(the default is a comma). Alternatively, a template can be specified which
 will be passed the result of the query as the 'objects' variable
 
 Query key/value pairs can be prefixed with a '!' or '~' to negate the query.
 The __in filter works, use a comma separated string of arguments
 
+You can also update fields using -u field=value. For every changed object, you
+will be prompted to approve the changes.
+
 Examples:
  - Display name and assettag of all mc01 servers
-   ./manage.py query -a servers -m Server name__startswith=mc01 -f name,assettag
+   %prog query -a servers -m Server name__startswith=mc01 -f name,assettag
  - Get a list of name, ip, mac for all servers where the does not contain .82.
-   ./manage.py query -a servers -m Interface !ip_address__contains='.82.' -f server.name,ip_address,mac_address
+   %prog query -a servers -m Interface !ip_address__contains='.82.' -f server.name,ip_address,mac_address
  - Use a template to get the roles, depending on mac address
-   ./manage.py query -a servers -m Server interface__mac_address=00:17:A4:8D:E6:BC -t '{{ objects.0.role_set.all|join:"," }}'
+   %prog query -a servers -m Server interface__mac_address=00:17:A4:8D:E6:BC -t '{{ objects.0.role_set.all|join:"," }}'
  - List all eth0/eth1 network interfaces
-   ./manage.py query -a servers -m Interface name__in=eth0,eth1 -f ip_address,mac_address
- - Update the status of many servers at once
-   ./manage.py query -a servers -m Server name__contains=builder- -u status=spare
+   %prog query -a servers -m Interface name__in=eth0,eth1 -f ip_address,mac_address
+ - Update the state of all mc2* servers
+   $prog query -a servers -m Server name__startswith=mc2 -u status=live
+
+Operators you can filter with are listed on see
+https://docs.djangoproject.com/en/dev/ref/models/querysets/#field-lookups
