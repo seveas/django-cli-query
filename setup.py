@@ -2,8 +2,8 @@ import os
 from setuptools import setup, find_packages
  
 setup(name='django-cli-query',
-    version="1.2",
-    description='Management command for commandline querying',
+    version="1.3",
+    description='Django management command for commandline querying',
     author='Dennis Kaarsemaker',
     author_email='dennis@kaarsemaker.net',
     url='http://github.com/seveas/django-cli-query',
