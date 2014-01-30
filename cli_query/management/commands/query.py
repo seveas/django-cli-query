@@ -113,7 +113,7 @@ class Command(BaseCommand):
 
         # Help the user by displaying all fields if requested
         if options['list_fields']:
-            print "Fields for %s.models.%s:\n - %s" % (options['application'], options['model'], '\n - '.join(model._meta.get_all_field_names()))
+            self.stdout.write("Fields for %s.models.%s:\n - %s" % (options['application'], options['model'], '\n - '.join(model._meta.get_all_field_names())))
             return
 
         # Create queryset from commandline arguments
@@ -148,17 +148,17 @@ class Command(BaseCommand):
             keylen = max([len(x) for x in updates]) + 3
             vallen = max([len(str(getattr(obj, key))) for obj in queryset for key in updates]) + 3
             for obj in queryset:
-                print str(obj)
+                self.stdout.write(str(obj))
                 for key in sorted(updates.keys()):
                     sys.stdout.write('  ' +  key + ' ' * (keylen - len(key)))
                     sys.stdout.write(str(getattr(obj, key)) + ' ' * (vallen - len(str(getattr(obj,key)))))
                     sys.stdout.write('=> ' + updates[key] + "\n")
             resp = raw_input("Apply changes? [y/N] ")
             if resp.lower() != 'y':
-                print "Aborted"
+                self.stdout.write("Aborted")
             else:
                 queryset.update(**updates)
-                print "Applied!"
+                self.stdout.write("Applied!")
 
         # Generate output
         if options['template']:
@@ -166,7 +166,7 @@ class Command(BaseCommand):
                 template = Template(options['template'])
             except TemplateSyntaxError:
                 raise CommandError("Syntax error in template: %s" % str(sys.exc_info()[1]))
-            print template.render(Context({'objects': queryset}))
+            self.stdout.write(template.render(Context({'objects': queryset})))
         if options['template_file']:
             tf = options['template_file']
             if tf == '-':
@@ -183,7 +183,7 @@ class Command(BaseCommand):
                     raise CommandError("Cannot find a template named %s" % tf)
                 except TemplateSyntaxError:
                     raise CommandError("Syntax error in template: %s" % str(sys.exc_info()[1]))
-            print template.render(Context({'objects': queryset}))
+            self.stdout.write(template.render(Context({'objects': queryset})))
         elif options['fields']:
             def getattr_r(obj, attr):
                 if '.' in attr:
@@ -201,7 +201,7 @@ class Command(BaseCommand):
 
             fields = options['fields'].split(',')
             for record in queryset:
-                print options['separator'].join([unicode(getattr_r(record, x)) for x in fields])
+                self.stdout.write(options['separator'].join([unicode(getattr_r(record, x)) for x in fields]))
 
 def make_filter(args):
     qargs = []
