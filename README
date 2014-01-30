@@ -1,4 +1,4 @@
-Copyright (c) 2009-2012 Dennis Kaarsemaker <dennis@kaarsemaker.net>
+Copyright (c) 2009-2014 Dennis Kaarsemaker <dennis@kaarsemaker.net>
 A command-line interface to query the Django ORM
 
 Install:
@@ -30,5 +30,5 @@ Examples:
  - Update the state of all mc2* servers
    $prog query -a servers -m Server name__startswith=mc2 -u status=live
 
-Operators you can filter with are listed on see
+Operators you can filter with are listed on
 https://docs.djangoproject.com/en/dev/ref/models/querysets/#field-lookups
